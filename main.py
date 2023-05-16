@@ -4,6 +4,15 @@ import xml.etree.ElementTree as ET
 
 dirDados = "C:\\Bancamais\\Fastcommerce\\DadosLoja"
 
+with open("C:\\Bancamais\\Fastcommerce\\ProgramasExtras\\Conferência\\Stock-Check\\Resultado.txt", "w+") as f:
+        pass
+
+def output(info):
+    with open("C:\\Bancamais\\Fastcommerce\\ProgramasExtras\\Conferência\\Stock-Check\\Resultado.txt", "a") as f:
+        f.write(info)
+        f.write("\n")
+        f.close()
+
 #Administração do arquivo .cfg
 config_object = ConfigParser()
 config_object.read(f"{dirDados}\\StoreData.cfg")
@@ -20,11 +29,6 @@ payload= (f"""StoreName={StoreName}&StoreID={StoreID}&Username={Username}&
 headers = {'Content-Type': 'application/x-www-form-urlencoded'}
 
 response = requests.request("POST", url, headers=headers, data=payload)
-resposta = response.text
-
-with open("C:\\Users\\Usefr\\Desktop\\Integração[Bmais - FC ]\\Stock-Check\\output.xml","w+") as f:
-    f.write(resposta)
-    f.close()
 
 #Extrai os elementos do xml do fc
 root = ET.fromstring(response.text)
@@ -37,7 +41,7 @@ for record in root.findall('Record'):
 
 
 #Extrai os elementos do txt do b+
-with open("C:\\Users\\Usefr\\Desktop\\Integração[Bmais - FC ]\\Stock-Check\\Input1B+.txt", "r") as r:
+with open("C:\\Bancamais\\Fastcommerce\\ProgramasExtras\\Conferência\\Stock-Check\\syncEstoque.txt", "r") as r:
     file_contents = r.read()
 
 produtos_bmais = {}
@@ -51,18 +55,34 @@ for line in file_contents.split('\n'):
     produtos_bmais[id_produto] = estoque
 
 if len(produtos_bmais) != len(produtos_fc):
-    print(f"DIVERGENCIA ENCONTRADA: A quantidade de produtos entre sistemas não é a mesma, FC = {len(produtos_fc)} <-> B+ {len(produtos_bmais)}")
+    output(f"DIVERGÊNCIA ENCONTRADA: A quantidade de produtos entre sistemas não é a mesma: [FC = {len(produtos_fc)} <-> B+ {len(produtos_bmais)}]")
 
 c = 0
 
 for key in produtos_bmais:
-    if produtos_bmais[key] != produtos_fc[key]:
-        print(f"Diferença de estoque encontrada: ID = {key} // B+ = {produtos_bmais[key]} <-> FC = {produtos_fc[key]}")
-        c += 1
+    try:
+        if produtos_bmais[key] != produtos_fc[key]:
+            output(f"Diferença de estoque encontrada: ID = {key} // B+ = {produtos_bmais[key]} <-> FC = {produtos_fc[key]}")
+            c += 1
+    except:
+        output(f"Produto ID = {key} não encontrado no Fastcommerce.")
 
 if c == 0:
-    print("Nenhuma diferença encontrada.")
+    output("Nenhuma diferença encontrada.")
 else:
-    print("\n")
-    print(f"Foram encontradas {c} diferenças de estoque em total.")
-    print("\n")
+    if c == 1:
+        output("\n")
+        output("Foi encontrada apenas 1 diferença de estoque em total.")
+        output("\n")
+    else:
+        output("\n")
+        output(f"Foram encontradas {c} diferenças de estoque em total.")
+        output("\n")
+
+
+if (response.text.find("<ErrCod>")) > 0:
+    with open("C:\\Bancamais\\Fastcommerce\\ProgramasExtras\\Conferência\\Stock-Check\\Erro.txt", "w+") as e:
+        e.write("Houve um erro ao checar os IDs.")
+        e.write("\n")
+        e.write(response.text)
+        e.close()
