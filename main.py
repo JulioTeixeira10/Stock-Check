@@ -80,7 +80,7 @@ else:
         output("\n")
 
 
-if (response.text.find("<ErrCod>")) > 0:
+if (response.text.find("<ErrCod>0")) == -1:
     with open("C:\\Bancamais\\Fastcommerce\\ProgramasExtras\\Conferência\\Stock-Check\\Erro.txt", "w+") as e:
         e.write("Houve um erro ao checar os IDs.")
         e.write("\n")
